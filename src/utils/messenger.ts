@@ -251,27 +251,39 @@ export class Messenger {
       return;
     }
 
-    this.unsubscribe = firestore.onSnapshot(this.messages, (snapshot) => {
-      const messages = snapshot
-        .docChanges()
-        .filter((diff) => diff.type === "added")
-        .map((diff) => ({
-          ...diff.doc.data(),
-          id: diff.doc.id,
-        }));
+    this.unsubscribe = firestore.onSnapshot(
+      firestore.query(
+        this.messages,
+        firestore.where(
+          "sent_at",
+          ">=",
+          firestore.Timestamp.fromMillis(Date.now() - 3600000)
+        )
+      ),
+      (snapshot) => {
+        const messages = snapshot
+          .docChanges()
+          .filter((diff) => diff.type === "added")
+          .map((diff) => ({
+            ...diff.doc.data(),
+            id: diff.doc.id,
+          }));
 
-      this.messageQueue.push(...messages);
-      this.messageQueue.sort((m2, m1) => {
-        if (typeof this.listener.at === "undefined") {
-          return m2.sent_at.valueOf() - m1.sent_at.valueOf();
-        }
+        this.messageQueue.push(...messages);
+        this.messageQueue.sort((m2, m1) => {
+          if (typeof this.listener.at === "undefined") {
+            return m2.sent_at.valueOf() - m1.sent_at.valueOf();
+          }
 
-        const m2delay = this.delay(m2);
-        const m1delay = this.delay(m1);
+          const m2delay = this.delay(m2);
+          const m1delay = this.delay(m1);
 
-        return m1.sent_at.valueOf() + m1delay - m2.sent_at.valueOf() - m2delay;
-      });
-    });
+          return (
+            m1.sent_at.valueOf() + m1delay - m2.sent_at.valueOf() - m2delay
+          );
+        });
+      }
+    );
   }
 
   stopListening() {
