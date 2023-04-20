@@ -103,7 +103,7 @@
   </div>
   <div class="location">
     <h2>現在位置</h2>
-    {#if enableLocation}
+    {#if !enableLocation}
       <p class="error">
         現在位置が取得できていません。現在位置が取得できるまで、投稿はできません。
       </p>
