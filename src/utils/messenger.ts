@@ -12,7 +12,7 @@ export const SPEED_OF_SOUND = 3430;
 /**
  * 1km = 1000m
  */
-const km_per_meters = 1000;
+export const km_per_meters = 1000;
 
 /**
  * attenuation関数において、距離が2kmでsensitivityが1.0のときに0.8になるように設定
@@ -24,9 +24,17 @@ const base_sensitivity_factor = 4;
  * @param dist なんらかの「距離」
  * @returns 減衰率。1.0が最大、0.0が最小
  */
-const attenuation = (dist: number) => {
+export const attenuation = (dist: number) => {
   return 1 / (Math.pow(dist, 2) + 1);
 };
+
+/**
+ * メッセージの減衰率から距離を計算する関数
+ */
+export const invAttenuation = (attenuation: number) => {
+  // a\sqrt{\frac{100}{k}-1}
+  return Math.sqrt(1/attenuation - 1);
+}
 
 export type UserInfo = {
   created_at: Date;
