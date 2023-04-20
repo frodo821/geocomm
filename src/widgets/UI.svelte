@@ -23,7 +23,7 @@
   };
 
   const messenger = new Messenger(new Channel(...channels));
-  let enableLocation = true;
+  let enableLocation = false;
   let positionWatcher: number | null = null;
   let currentContent: string = "";
 
@@ -32,6 +32,7 @@
   onMount(() => {
     positionWatcher = navigator.geolocation.watchPosition(
       (position) => {
+        enableLocation = true;
         loc = {
           latitude: degrees(position.coords.latitude),
           longitude: degrees(position.coords.longitude),
@@ -54,7 +55,6 @@
 
     (async function () {
       for await (const message of messenger) {
-        console.log(message);
         messages = [...messages, message];
       }
     })();
