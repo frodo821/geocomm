@@ -154,7 +154,12 @@
         </p>
         <p class="distance">
           {#if enableLocation}
-            {Math.floor(distance(fromGeoPoint(msg.at), loc) / 10) / 100}km
+            {@const dist = Math.floor(distance(fromGeoPoint(msg.at), loc) / 10) / 100}
+            {#if dist < 1}
+              {dist*1000}m
+            {:else}
+              {dist}km
+            {/if}
           {:else}
             不明
           {/if}
