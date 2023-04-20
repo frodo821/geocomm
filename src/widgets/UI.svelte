@@ -8,6 +8,8 @@
   } from "../utils/geolocation";
   import { Channel, Messenger, type ReceivedMessage } from "../utils/messenger";
   import MapIndicator from "./MapIndicator.svelte";
+  import Message from "./Message.svelte";
+  import { auth } from "../utils/firebase-client";
 
   function rand() {
     return Math.floor(Math.random() * 256);
@@ -147,10 +149,12 @@
     <MapIndicator
       location={loc}
       sensitivity={messenger.sensitivity}
-      messages={messages.map((msg) => ({
-        at: fromGeoPoint(msg.at),
-        id: msg.id,
-      }))}
+      messages={messages
+        .filter((msg) => msg.user_id !== auth.currentUser?.uid)
+        .map((msg) => ({
+          at: fromGeoPoint(msg.at),
+          id: msg.id,
+        }))}
     />
   {/if}
 </div>
@@ -159,39 +163,18 @@
   <h2>メッセージ</h2>
   <div class="messages">
     {#each [...messages].reverse() as msg}
-      <div class="message">
-        <p class="username">{msg.user.display_name}</p>
-        <p class="content">
-          {msg.content}
-        </p>
-        <p class="channel">
-          <button
-            type="button"
-            on:click={() => {
-              channels[0] = msg.channel_a;
-              channels[1] = msg.channel_b;
-              channels[2] = msg.channel_c;
+      <Message
+        {loc}
+        message={msg}
+        locationEnabled={enableLocation}
+        setChannel={(channel) => {
+          channels[0] = channel.channel_a;
+          channels[1] = channel.channel_b;
+          channels[2] = channel.channel_c;
 
-              messenger.channel = new Channel(...channels);
-            }}
-          >
-            +{msg.channel_a}.{msg.channel_b}.{msg.channel_c}
-          </button>
-        </p>
-        <p class="distance">
-          {#if enableLocation}
-            {@const dist =
-              Math.floor(distance(fromGeoPoint(msg.at), loc) / 10) / 100}
-            {#if dist < 1}
-              {dist * 1000}m
-            {:else}
-              {dist}km
-            {/if}
-          {:else}
-            不明
-          {/if}
-        </p>
-      </div>
+          messenger.channel = channel;
+        }}
+      />
     {/each}
   </div>
 </div>
@@ -216,56 +199,5 @@
   .input-content {
     grid-column: 1 / 3;
     grid-template-rows: 1fr 1.5fr;
-  }
-
-  .messages > .message {
-    border-radius: 5px;
-    border: solid 2px;
-    padding: 0.1rem 0.6rem;
-    margin: 0.4rem 0.2rem;
-    display: grid;
-    grid-template-columns: 1fr 4fr 1fr;
-    grid-template-rows: 1.6rem 1fr 1.6rem;
-  }
-
-  .messages > .message > p {
-    margin: 0;
-  }
-
-  .messages > .message > .username {
-    grid-column: 1 / 2;
-    grid-row: 1 / 2;
-    font-weight: bold;
-  }
-
-  .messages > .message > .content {
-    grid-column: 1 / 4;
-    grid-row: 2 / 3;
-  }
-
-  .messages > .message > .channel {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
-  }
-
-  .messages > .message > .channel > button {
-    background: none;
-    border: none;
-    border-bottom: solid 1px;
-    color: rgb(0, 90, 207);
-  }
-
-  .messages > .message > .channel > button:hover {
-    color: rgb(100, 131, 0);
-  }
-
-  .messages > .message > .channel > button:active {
-    color: rgb(70, 0, 105);
-  }
-
-  .messages > .message > .distance {
-    grid-column: 3 / 4;
-    grid-row: 3 / 4;
-    text-align: right;
   }
 </style>
