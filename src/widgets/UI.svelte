@@ -31,11 +31,7 @@
 
         messenger.location = loc;
       },
-      (err) => {
-        console.error(err);
-        alert("位置情報の取得に失敗しました。");
-        enableLocation = false;
-      },
+      (err) => { console.error(err); },
       {
         enableHighAccuracy: false,
         maximumAge: 0,
@@ -107,6 +103,11 @@
   </div>
   <div class="location">
     <h2>現在位置</h2>
+    {#if enableLocation}
+      <p class="error">
+        現在位置が取得できていません。現在位置が取得できるまで、投稿はできません。
+      </p>
+    {/if}
     <p>
       {Math.abs(loc.latitude)}{loc.latitude >= 0 ? "N" : "S"}, {Math.abs(
         loc.longitude
