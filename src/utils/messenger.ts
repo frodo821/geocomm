@@ -72,6 +72,7 @@ export type MessageWithId = Message & { id: string };
  */
 export type ReceivedMessage = MessageWithId & {
   user: UserInfo;
+  replied_message: ReceivedMessage | null;
 };
 
 /**
@@ -228,8 +229,8 @@ export class Messenger {
     await firestore.updateDoc(userRef, { display_name: name });
   }
 
-  async sendMessage(message: string, reply_to?: string, sent_at?: Date) {
-    const uid = auth.currentUser?.uid;
+  async sendMessage(message: string, reply_to?: string | null, sent_at?: Date) {
+    const uid = this.uid;
 
     if (!uid) {
       throw new Error("Please sign in first.");
@@ -257,6 +258,29 @@ export class Messenger {
 
     const mdoc = await firestore.addDoc(this.messages, msg);
     return mdoc.id;
+  }
+
+  async deleteMessage(message_id: string) {
+    const uid = this.uid;
+
+    if (!uid) {
+      throw new Error("Please sign in first.");
+    }
+
+    const mdoc = firestore.doc(this.messages, message_id);
+    const doc = await firestore.getDoc(mdoc);
+
+    if (!doc.exists()) {
+      return;
+    }
+
+    const msg = doc.data() as Message;
+
+    if (msg.user_id !== uid) {
+      throw new Error("You can't delete other's messages.");
+    }
+
+    await firestore.deleteDoc(mdoc);
   }
 
   startListening() {
@@ -348,12 +372,30 @@ export class Messenger {
           Math.random() < this.messageAppearanceProbability(msg) ||
           msg.user_id === auth.currentUser?.uid
         ) {
+          let replied_message: ReceivedMessage | null = null;
+
+          if (msg.reply_to !== null) {
+            const rdoc = await firestore.getDoc(
+              firestore.doc(this.messages, msg.reply_to)
+            );
+            replied_message = rdoc.data() as ReceivedMessage;
+
+            const ur = firestore.doc(firestoreApp, "users", msg.user_id);
+
+            replied_message.user = (
+              await firestore.getDoc(ur)
+            ).data()! as UserInfo;
+
+            replied_message.replied_message = null;
+          }
+
           const userRef = firestore.doc(firestoreApp, "users", msg.user_id);
           const user = (await firestore.getDoc(userRef)).data()! as UserInfo;
 
           yield {
             ...msg,
             user,
+            replied_message,
           };
         }
       } else {

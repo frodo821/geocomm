@@ -27,6 +27,8 @@
   let positionWatcher: number | null = null;
   let currentContent: string = "";
 
+  let replyTo: string | null = null;
+
   let messages: ReceivedMessage[] = [];
 
   onMount(() => {
@@ -89,33 +91,35 @@
   <div class="listener">
     <div class="channels">
       <h2>Channel</h2>
-      <p class="channel-ranges">
-        <input
-          type="range"
-          min="0"
-          max="256"
-          step="1"
-          bind:value={channels[0]}
-          on:input={() => (messenger.channel = new Channel(...channels))}
-        />
-        <input
-          type="range"
-          min="0"
-          max="256"
-          step="1"
-          bind:value={channels[1]}
-          on:input={() => (messenger.channel = new Channel(...channels))}
-        />
-        <input
-          type="range"
-          min="0"
-          max="256"
-          step="1"
-          bind:value={channels[2]}
-          on:input={() => (messenger.channel = new Channel(...channels))}
-        />
-      </p>
-      <p>{messenger.channel.toString()}</p>
+      {#key `channel-${channels[0]}-${channels[1]}-${channels[2]}`}
+        <p class="channel-ranges">
+          <input
+            type="range"
+            min="0"
+            max="256"
+            step="1"
+            bind:value={channels[0]}
+            on:input={() => (messenger.channel = new Channel(...channels))}
+          />
+          <input
+            type="range"
+            min="0"
+            max="256"
+            step="1"
+            bind:value={channels[1]}
+            on:input={() => (messenger.channel = new Channel(...channels))}
+          />
+          <input
+            type="range"
+            min="0"
+            max="256"
+            step="1"
+            bind:value={channels[2]}
+            on:input={() => (messenger.channel = new Channel(...channels))}
+          />
+        </p>
+        <p>{messenger.channel.toString()}</p>
+      {/key}
     </div>
     <div class="sensitivity">
       <h2>Receive Range Control</h2>
@@ -149,12 +153,15 @@
     </div>
     <div class="input-content">
       {#if messenger.isSignedIn}
+        {#if replyTo !== null}
+          <p>Replying:</p>
+        {/if}
         <textarea rows="8" bind:value={currentContent} />
         <div class="controls">
           <button
             type="button"
             on:click={() => {
-              messenger.sendMessage(currentContent).then(() => {
+              messenger.sendMessage(currentContent, replyTo).then(() => {
                 currentContent = "";
               });
             }}
@@ -173,14 +180,20 @@
         {#each [...messages].reverse() as msg}
           <Message
             {loc}
+            {messenger}
+            {replyTo}
             message={msg}
             locationEnabled={enableLocation}
-            setChannel={(channel) => {
-              channels[0] = channel.channel_a;
-              channels[1] = channel.channel_b;
-              channels[2] = channel.channel_c;
-
-              messenger.channel = channel;
+            onReplySelected={(id) => {
+              replyTo = id;
+            }}
+            onMessageDeleted={() => {
+              messages = messages.filter((m) => m.id !== msg.id);
+            }}
+            onChannelChanged={() => {
+              channels[0] = messenger.channel.channel_a;
+              channels[1] = messenger.channel.channel_b;
+              channels[2] = messenger.channel.channel_c;
             }}
           />
         {/each}
@@ -190,7 +203,7 @@
 </div>
 
 <style>
-  @media screen and (min-width:1024px) {
+  @media screen and (min-width: 1024px) {
     .ui-layer {
       grid-template-columns: 1fr 2fr 1fr;
       grid-template-rows: 100%;
@@ -255,6 +268,7 @@
     border-radius: 5px;
     z-index: 1;
     display: grid;
+    grid-template-rows: 5rem;
   }
 
   .messages-scroll-wrapper {
