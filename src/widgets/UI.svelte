@@ -88,7 +88,7 @@
 <div class="ui-layer">
   <div class="listener">
     <div class="channels">
-      <h2>チャンネル</h2>
+      <h2>Channel</h2>
       <p class="channel-ranges">
         <input
           type="range"
@@ -118,7 +118,7 @@
       <p>{messenger.channel.toString()}</p>
     </div>
     <div class="sensitivity">
-      <h2>感度</h2>
+      <h2>Receive Range Control</h2>
       <p class="sensi-range">
         <input
           type="range"
@@ -131,7 +131,7 @@
       </p>
     </div>
     <div class="location">
-      <h2>現在位置</h2>
+      <h2>Your Location</h2>
       {#if enableLocation}
         <p>
           {Math.abs(loc.latitude)}{loc.latitude >= 0 ? "N" : "S"}, {Math.abs(
@@ -160,14 +160,14 @@
             }}
             disabled={!enableLocation || currentContent.length === 0}
           >
-            投稿する
+            Post!
           </button>
         </div>
       {/if}
     </div>
   </div>
   <div class="contents">
-    <h2 class="contents-heading">メッセージ</h2>
+    <h2 class="contents-heading">Timeline</h2>
     <div class="messages-scroll-wrapper">
       <div class="messages">
         {#each [...messages].reverse() as msg}

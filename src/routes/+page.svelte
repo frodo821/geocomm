@@ -36,7 +36,6 @@
       grid-row: 1/2;
       grid-column: 2/3;
       grid-template-columns: 10fr 1fr;
-      z-index: 1;
     }
     .ui-container {
       grid-row: 2/3;
@@ -54,6 +53,7 @@
     border-radius: 5px;
     background: rgba(255, 253, 240, 0.715);
     display: grid;
+    z-index: 1;
   }
 
   h1 {
