@@ -20,6 +20,11 @@ export const km_per_meters = 1000;
 const base_sensitivity_factor = 4;
 
 /**
+ * attenuation関数において、チャンネル距離が1のときに0.8になるように設定
+ */
+const channel_distance_attenuation_factor = 2;
+
+/**
  * 減衰関数。とりあえず $\frac{1}{({\rm dist})^2 + 1}$ にしてみる
  * @param dist なんらかの「距離」
  * @returns 減衰率。1.0が最大、0.0が最小
@@ -33,8 +38,8 @@ export const attenuation = (dist: number) => {
  */
 export const invAttenuation = (attenuation: number) => {
   // a\sqrt{\frac{100}{k}-1}
-  return Math.sqrt(1/attenuation - 1);
-}
+  return Math.sqrt(1 / attenuation - 1);
+};
 
 export type UserInfo = {
   created_at: Date;
@@ -314,7 +319,7 @@ export class Messenger {
     const c_dist = this.listener.channel.distance(
       new Channel(msg.channel_a, msg.channel_b, msg.channel_c)
     );
-    const channel = attenuation(c_dist);
+    const channel = attenuation(c_dist / channel_distance_attenuation_factor);
 
     const dist = distance(
       this.listener.at ?? fromGeoPoint(msg.at),
