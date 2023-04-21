@@ -117,7 +117,10 @@
           on:input={() => (messenger.channel = new Channel(...channels))}
         />
       </p>
-      <p class="channel">+{channels[0]}.{channels[1]}.{channels[2]}</p>
+      <p class="channel">
+        <span class="channel-name">+{channels[0]}.{channels[1]}.{channels[2]}</span>
+        <span class="color-display" style={`background: rgb(${channels.join()})`} />
+      </p>
     </div>
     <div class="sensitivity">
       <h2>Receive Range Control</h2>
@@ -273,6 +276,13 @@
   .messages-scroll-wrapper {
     overflow: auto;
     height: 100%;
+  }
+
+  .ui-layer :global(.color-display) {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: solid 1px black;
   }
 
   .error {

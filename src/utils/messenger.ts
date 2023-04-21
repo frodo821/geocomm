@@ -2,7 +2,9 @@ import type { CollectionReference, Unsubscribe } from "firebase/firestore";
 import * as firestore from "firebase/firestore";
 import { auth, firestoreApp } from "./firebase-client";
 import { distance, fromGeoPoint, type LatLng } from "./geolocation";
+import { Channel } from "./channel";
 import { geohashForLocation } from "geofire-common";
+export { Channel };
 
 /**
  * 遅すぎるとしんどいので、とりあえず空気中の音速の10倍を設定
@@ -74,61 +76,6 @@ export type ReceivedMessage = MessageWithId & {
   user: UserInfo;
   replied_message: ReceivedMessage | null;
 };
-
-/**
- * メッセージを送信するチャンネル
- */
-export class Channel {
-  constructor(
-    public readonly channel_a: number,
-    public readonly channel_b: number,
-    public readonly channel_c: number
-  ) {}
-
-  static fromTuple(tuple: [number, number, number]) {
-    return new Channel(...tuple);
-  }
-
-  static fromString(str: string) {
-    let [a, b, c] = str.split(".").map((s) => parseInt(s));
-
-    if (typeof a !== "number" || isNaN(a)) {
-      a = 0;
-    } else if (a < 0 || a > 255) {
-      a = ((a % 256) + 256) % 256;
-    }
-
-    if (typeof b !== "number" || isNaN(b)) {
-      b = 0;
-    } else if (b < 0 || b > 255) {
-      b = ((b % 256) + 256) % 256;
-    }
-
-    if (typeof c !== "number" || isNaN(c)) {
-      c = 0;
-    } else if (c < 0 || c > 255) {
-      c = ((c % 256) + 256) % 256;
-    }
-
-    return new Channel(a, b, c);
-  }
-
-  toString() {
-    return `${this.channel_a}.${this.channel_b}.${this.channel_c}`;
-  }
-
-  distance(other: Channel) {
-    if (!(other instanceof Channel)) {
-      throw new Error("must be a Channel instance");
-    }
-
-    return Math.sqrt(
-      Math.pow(this.channel_a - other.channel_a, 2) +
-        Math.pow(this.channel_b - other.channel_b, 2) +
-        Math.pow(this.channel_c - other.channel_c, 2)
-    );
-  }
-}
 
 /**
  * メッセージを受信するためのリスナーの設定

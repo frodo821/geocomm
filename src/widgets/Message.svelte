@@ -2,6 +2,7 @@
   import { afterUpdate } from "svelte";
   import { distance, fromGeoPoint, type LatLng } from "../utils/geolocation";
   import { Channel, Messenger, type ReceivedMessage } from "../utils/messenger";
+  import { channel_for_color_names, color_match_regexp } from "../utils/channel";
 
   export let message: ReceivedMessage;
   export let loc: LatLng;
@@ -28,10 +29,14 @@
         }[m] ?? "")
     );
 
-    return content.replace(/\+\d{1,3}\.\d{1,3}\.\d{1,3}/g, (m) => {
-      return `<button class="channel-${message.id}" data-channel=${m.slice(
-        1
-      )}>${m}</button>`;
+    return content.replace(color_match_regexp, (m) => {
+      const c = m.slice(1) as keyof typeof channel_for_color_names;
+      const channel = c in channel_for_color_names ? channel_for_color_names[c] : Channel.fromString(c);
+      return (
+        `<button class="channel-${message.id}" data-channel=${channel.toString()}>`+
+        `${m}<span class="color-display" style="background: rgb(${channel.tuple.join()})"></span>`+
+        `</button>`
+      );
     });
   };
 
@@ -262,5 +267,11 @@
 
   button.controls-button:active {
     color: rgba(52, 117, 122, 0.5);
+  }
+
+  .message :global(button > span.color-display) {
+    position: relative;
+    top: 3px;
+    left: 3px;
   }
 </style>
