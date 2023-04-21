@@ -194,8 +194,7 @@
   }
 
   button.change-channel,
-  .message > .content > :global(button),
-  .replying-content > :global(button) {
+  .message > .content :global(button) {
     background: none;
     border: none;
     border-bottom: solid 1px;
@@ -204,14 +203,12 @@
   }
 
   button.change-channel:hover,
-  .message > .content > :global(button:hover),
-  .replying-content > :global(button:hover) {
+  .message > .content :global(button:hover) {
     color: rgb(100, 131, 0);
   }
 
   button.change-channel:active,
-  .message > .content > :global(button:active),
-  .replying-content > :global(button:active) {
+  .message > .content :global(button:active) {
     color: rgb(70, 0, 105);
   }
 
