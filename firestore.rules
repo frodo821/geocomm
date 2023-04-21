@@ -4,19 +4,26 @@ service cloud.firestore {
   	function isValidMessage(data, uid) {
       return
         uid != null &&
+        data != null &&
         data.keys().hasOnly([
-        'at', 'user_id', 'channel_a', 'channel_b', 'channel_c',
-        'content', 'geohash', 'reply_to', 'sent_at', 'embeddings']) &&
-        'at' in data && data.at is latlng &&
-        'user_id' in data && data.user_id is string && data.user_id == uid &&
-        'channel_a' in data && data.channel_a is number &&
-        'channel_b' in data && data.channel_b is number &&
-        'channel_c' in data && data.channel_c is number &&
-        'content' in data && data.content is string &&
-        'geohash' in data && data.geohash is string &&
-        'reply_to' in data && (data.reply_to is string || data.reply_to == null) &&
-        'sent_at' in data && data.sent_at is timestamp &&
-        'embeddings' in data && data.embeddings is list;
+          'at', 'user_id', 'channel_a', 'channel_b', 'channel_c',
+          'content', 'geohash', 'reply_to', 'sent_at', 'embeddings', 'original'
+        ]) &&
+        data.keys().hasAll([
+          'at', 'user_id', 'channel_a', 'channel_b', 'channel_c',
+          'content', 'geohash', 'reply_to', 'sent_at', 'embeddings'
+        ]) &&
+        data.at is latlng &&
+        data.user_id is string && data.user_id == uid &&
+        data.channel_a is number &&
+        data.channel_b is number &&
+        data.channel_c is number &&
+        data.content is string &&
+        data.geohash is string &&
+        (data.reply_to is string || data.reply_to == null) &&
+        data.sent_at is timestamp &&
+        data.embeddings is list &&
+        ((!('original' in data)) || data.original is string);
   	}
     
     function isValidUserData(data) {
