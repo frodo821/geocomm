@@ -89,7 +89,7 @@
 </div>
 
 <div class="ui-layer">
-  <div class="listener">
+  <div class="listener" style={`--channel-color: rgb(${channels.join()})`}>
     <div class="channels">
       <h2>Channel</h2>
       <p class="channel-ranges">
@@ -120,7 +120,7 @@
       </p>
       <p class="channel">
         <span class="channel-name">+{channels[0]}.{channels[1]}.{channels[2]}</span>
-        <span class="color-display" style={`background: rgb(${channels.join()})`} />
+        <span class="color-display" style="background: var(--channel-color, transparent)" />
       </p>
     </div>
     <div class="sensitivity">
@@ -221,6 +221,32 @@
     }
     .contents {
       grid-column: 3/4;
+    }
+    .listener {
+      margin: 0.4rem;
+      position: relative;
+    }
+    .listener::before {
+      content: "";
+      position: absolute;
+      top: -0.4rem;
+      bottom: -0.4rem;
+      right: -0.4rem;
+      left: -0.4rem;
+      border-radius: 8px;
+      background: var(--channel-color, transparent);
+      z-index: -2;
+    }
+    .listener::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      border-radius: 5px;
+      background: white;
+      z-index: -1;
     }
   }
   .map-layer {
