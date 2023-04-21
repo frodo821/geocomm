@@ -91,35 +91,33 @@
   <div class="listener">
     <div class="channels">
       <h2>Channel</h2>
-      {#key `channel-${channels[0]}-${channels[1]}-${channels[2]}`}
-        <p class="channel-ranges">
-          <input
-            type="range"
-            min="0"
-            max="256"
-            step="1"
-            bind:value={channels[0]}
-            on:input={() => (messenger.channel = new Channel(...channels))}
-          />
-          <input
-            type="range"
-            min="0"
-            max="256"
-            step="1"
-            bind:value={channels[1]}
-            on:input={() => (messenger.channel = new Channel(...channels))}
-          />
-          <input
-            type="range"
-            min="0"
-            max="256"
-            step="1"
-            bind:value={channels[2]}
-            on:input={() => (messenger.channel = new Channel(...channels))}
-          />
-        </p>
-        <p>{messenger.channel.toString()}</p>
-      {/key}
+      <p class="channel-ranges">
+        <input
+          type="range"
+          min="0"
+          max="256"
+          step="1"
+          bind:value={channels[0]}
+          on:input={() => (messenger.channel = new Channel(...channels))}
+        />
+        <input
+          type="range"
+          min="0"
+          max="256"
+          step="1"
+          bind:value={channels[1]}
+          on:input={() => (messenger.channel = new Channel(...channels))}
+        />
+        <input
+          type="range"
+          min="0"
+          max="256"
+          step="1"
+          bind:value={channels[2]}
+          on:input={() => (messenger.channel = new Channel(...channels))}
+        />
+      </p>
+      <p>+{channels[0]}.{channels[1]}.{channels[2]}</p>
     </div>
     <div class="sensitivity">
       <h2>Receive Range Control</h2>
