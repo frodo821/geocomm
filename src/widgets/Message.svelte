@@ -82,7 +82,7 @@
     padding: 0.1rem 0.6rem;
     margin: 0.4rem 0.2rem;
     display: grid;
-    grid-template-columns: 1fr 4fr 1fr;
+    grid-template-columns: 4fr 2fr 1fr;
     grid-template-rows: 1.6rem 1fr 1.6rem;
   }
 

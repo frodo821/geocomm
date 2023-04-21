@@ -70,85 +70,7 @@
   });
 </script>
 
-<div class="listener">
-  <div class="channels">
-    <h2>チャンネル</h2>
-    <p>
-      <input
-        type="range"
-        min="0"
-        max="256"
-        step="1"
-        bind:value={channels[0]}
-        on:input={() => (messenger.channel = new Channel(...channels))}
-      />
-      <input
-        type="range"
-        min="0"
-        max="256"
-        step="1"
-        bind:value={channels[1]}
-        on:input={() => (messenger.channel = new Channel(...channels))}
-      />
-      <input
-        type="range"
-        min="0"
-        max="256"
-        step="1"
-        bind:value={channels[2]}
-        on:input={() => (messenger.channel = new Channel(...channels))}
-      />
-    </p>
-    <p>{messenger.channel.toString()}</p>
-  </div>
-  <div class="sensitivity">
-    <h2>感度</h2>
-    <p>
-      <input
-        type="range"
-        min="0"
-        max="100"
-        step="0.1"
-        bind:value={messenger.sensitivity}
-      />
-    </p>
-    <p>{messenger.sensitivity}</p>
-  </div>
-  <div class="location">
-    <h2>現在位置</h2>
-    {#if !enableLocation}
-      <p class="error">
-        現在位置が取得できていません。現在位置が取得できるまで、投稿はできません。
-      </p>
-    {/if}
-    <p>
-      {Math.abs(loc.latitude)}{loc.latitude >= 0 ? "N" : "S"}, {Math.abs(
-        loc.longitude
-      )}{loc.longitude >= 0 ? "E" : "W"}
-    </p>
-    <p class="note">
-      地図の赤い丸の範囲内のメッセージは80%以上の確率で受信できます。
-    </p>
-  </div>
-  <div class="input-content">
-    {#if messenger.isSignedIn}
-      <textarea cols="80" rows="10" bind:value={currentContent} />
-      <div class="controls">
-        <button
-          type="button"
-          on:click={() => {
-            messenger.sendMessage(currentContent).then(() => {
-              currentContent = "";
-            });
-          }}
-          disabled={!enableLocation || currentContent.length === 0}
-        >
-          投稿する
-        </button>
-      </div>
-    {/if}
-  </div>
-
+<div class="map-layer">
   {#if enableLocation}
     <MapIndicator
       location={loc}
@@ -163,33 +85,181 @@
   {/if}
 </div>
 
-<div class="contents">
-  <h2>メッセージ</h2>
-  <div class="messages">
-    {#each [...messages].reverse() as msg}
-      <Message
-        {loc}
-        message={msg}
-        locationEnabled={enableLocation}
-        setChannel={(channel) => {
-          channels[0] = channel.channel_a;
-          channels[1] = channel.channel_b;
-          channels[2] = channel.channel_c;
+<div class="ui-layer">
+  <div class="listener">
+    <div class="channels">
+      <h2>チャンネル</h2>
+      <p class="channel-ranges">
+        <input
+          type="range"
+          min="0"
+          max="256"
+          step="1"
+          bind:value={channels[0]}
+          on:input={() => (messenger.channel = new Channel(...channels))}
+        />
+        <input
+          type="range"
+          min="0"
+          max="256"
+          step="1"
+          bind:value={channels[1]}
+          on:input={() => (messenger.channel = new Channel(...channels))}
+        />
+        <input
+          type="range"
+          min="0"
+          max="256"
+          step="1"
+          bind:value={channels[2]}
+          on:input={() => (messenger.channel = new Channel(...channels))}
+        />
+      </p>
+      <p>{messenger.channel.toString()}</p>
+    </div>
+    <div class="sensitivity">
+      <h2>感度</h2>
+      <p class="sensi-range">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          step="0.1"
+          bind:value={messenger.sensitivity}
+        />
+        <span>{messenger.sensitivity}</span>
+      </p>
+    </div>
+    <div class="location">
+      <h2>現在位置</h2>
+      {#if enableLocation}
+        <p>
+          {Math.abs(loc.latitude)}{loc.latitude >= 0 ? "N" : "S"}, {Math.abs(
+            loc.longitude
+          )}{loc.longitude >= 0 ? "E" : "W"}
+        </p>
+        <p class="note">
+          地図の赤い丸の範囲内のメッセージは80%以上の確率で受信できます。
+        </p>
+      {:else}
+        <p class="error">
+          現在位置が取得できていません。現在位置が取得できるまで、投稿はできません。
+        </p>
+      {/if}
+    </div>
+    <div class="input-content">
+      {#if messenger.isSignedIn}
+        <textarea rows="8" bind:value={currentContent} />
+        <div class="controls">
+          <button
+            type="button"
+            on:click={() => {
+              messenger.sendMessage(currentContent).then(() => {
+                currentContent = "";
+              });
+            }}
+            disabled={!enableLocation || currentContent.length === 0}
+          >
+            投稿する
+          </button>
+        </div>
+      {/if}
+    </div>
+  </div>
+  <div class="contents">
+    <h2 class="contents-heading">メッセージ</h2>
+    <div class="messages-scroll-wrapper">
+      <div class="messages">
+        {#each [...messages].reverse() as msg}
+          <Message
+            {loc}
+            message={msg}
+            locationEnabled={enableLocation}
+            setChannel={(channel) => {
+              channels[0] = channel.channel_a;
+              channels[1] = channel.channel_b;
+              channels[2] = channel.channel_c;
 
-          messenger.channel = channel;
-        }}
-      />
-    {/each}
+              messenger.channel = channel;
+            }}
+          />
+        {/each}
+      </div>
+    </div>
   </div>
 </div>
 
 <style>
+  @media screen and (min-width:1024px) {
+    .ui-layer {
+      grid-template-columns: 1fr 2fr 1fr;
+      grid-template-rows: 100%;
+      margin-top: 2rem;
+      height: calc(100% - 2rem);
+    }
+    .messages {
+      max-height: calc(100% - 4rem);
+    }
+    .input-content textarea {
+      width: calc(100% - 0.8rem);
+    }
+    .contents {
+      grid-column: 3/4;
+    }
+  }
+  .map-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .ui-layer {
+    display: grid;
+  }
+
   .listener {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    position: sticky;
-    top: 0;
     background: white;
+    padding: 0.4rem;
+    border-radius: 5px;
+    z-index: 1;
+  }
+
+  .input-content textarea {
+    resize: none;
+  }
+
+  .listener h2 {
+    margin: 0.2rem 0;
+  }
+
+  .listener p {
+    margin: 0.2rem 0;
+  }
+
+  p.channel-ranges {
+    display: grid;
+  }
+
+  p.sensi-range {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+  }
+
+  .contents {
+    background: white;
+    padding: 0.4rem;
+    border-radius: 5px;
+    z-index: 1;
+    display: grid;
+  }
+
+  .messages-scroll-wrapper {
+    overflow: auto;
+    height: 100%;
   }
 
   .error {
@@ -198,10 +268,5 @@
 
   .note {
     font-size: 0.8rem;
-  }
-
-  .input-content {
-    grid-column: 1 / 3;
-    grid-template-rows: 1fr 1.5fr;
   }
 </style>

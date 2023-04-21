@@ -78,7 +78,7 @@
 
 <style>
   .indicator {
-    height: 300px;
+    height: 100%;
   }
 
   .indicator :global(.map-pins > i.material-symbols-outlined) {
