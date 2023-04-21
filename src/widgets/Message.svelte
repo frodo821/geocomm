@@ -34,7 +34,7 @@
       const channel = c in channel_for_color_names ? channel_for_color_names[c] : Channel.fromString(c);
       return (
         `<button class="channel-${message.id}" data-channel=${channel.toString()}>`+
-        `${m}<span class="color-display" style="background: rgb(${channel.tuple.join()})"></span>`+
+        `${m}<span class="color-display" style="background: ${channel.color}"></span>`+
         `</button>`
       );
     });

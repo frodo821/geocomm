@@ -40,6 +40,10 @@ export class Channel {
     return [this.channel_a, this.channel_b, this.channel_c];
   }
 
+  get color(): string {
+    return `rgb(${this.tuple.join()})`;
+  }
+
   toString() {
     return `${this.channel_a}.${this.channel_b}.${this.channel_c}`;
   }

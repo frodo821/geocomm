@@ -1,7 +1,7 @@
 <script lang="ts">
   import type * as leaflet from "leaflet";
   import { onMount } from "svelte";
-  import { invAttenuation, km_per_meters } from "../utils/messenger";
+  import { Channel, invAttenuation, km_per_meters } from "../utils/messenger";
   import type { LatLng } from "../utils/geolocation";
 
   let indicatorElement: HTMLDivElement;
@@ -13,7 +13,7 @@
 
   export let location: LatLng;
   export let sensitivity: number;
-  export let messages: { at: LatLng, id: string }[] = [];
+  export let messages: { at: LatLng, id: string, channel: Channel }[] = [];
 
   onMount(async () => {
     leaflet = (await import("leaflet")).default;
@@ -62,11 +62,11 @@
         delete pins[id];
       });
 
-      messages.forEach(({ at, id }) => {
+      messages.forEach(({ at, id, channel: c }) => {
         pins[id] = leaflet.marker([at.latitude, at.longitude], {
           icon: leaflet.divIcon({
             className: 'map-pins',
-            html: '<i class="material-symbols-outlined">sms</i>',
+            html: `<i class="material-symbols-outlined" style="color:${c.color}">sms</i>`,
           }),
         }).addTo(mapping);
       });

@@ -82,6 +82,7 @@
         .map((msg) => ({
           at: fromGeoPoint(msg.at),
           id: msg.id,
+          channel: new Channel(msg.channel_a, msg.channel_b, msg.channel_c),
         }))}
     />
   {/if}
