@@ -9,11 +9,10 @@
   <h1>Loading...</h1>
 {:then authResult}
   <h1>Sonorous</h1>
-  {#if authResult}
-    <UI />
-  {:else}
+  {#if !authResult}
     <div>
       <button type="button" on:click={() => signingIn()}>Sign in with Google</button>
     </div>
   {/if}
+  <UI />
 {/await}

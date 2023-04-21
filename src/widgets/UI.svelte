@@ -50,8 +50,10 @@
       }
     );
 
-    messenger.startListening();
-    messenger.register();
+    if (messenger.isSignedIn) {
+      messenger.startListening();
+      messenger.register();
+    }
 
     (async function () {
       for await (const message of messenger) {
@@ -129,20 +131,22 @@
     </p>
   </div>
   <div class="input-content">
-    <textarea cols="80" rows="10" bind:value={currentContent} />
-    <div class="controls">
-      <button
-        type="button"
-        on:click={() => {
-          messenger.sendMessage(currentContent).then(() => {
-            currentContent = "";
-          });
-        }}
-        disabled={!enableLocation || currentContent.length === 0}
-      >
-        投稿する
-      </button>
-    </div>
+    {#if messenger.isSignedIn}
+      <textarea cols="80" rows="10" bind:value={currentContent} />
+      <div class="controls">
+        <button
+          type="button"
+          on:click={() => {
+            messenger.sendMessage(currentContent).then(() => {
+              currentContent = "";
+            });
+          }}
+          disabled={!enableLocation || currentContent.length === 0}
+        >
+          投稿する
+        </button>
+      </div>
+    {/if}
   </div>
 
   {#if enableLocation}

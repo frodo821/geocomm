@@ -152,6 +152,14 @@ export class Messenger {
     };
   }
 
+  get isSignedIn() {
+    return auth.currentUser !== null;
+  }
+
+  get uid() {
+    return auth.currentUser?.uid ?? null;
+  }
+
   get channel() {
     return this.listener.channel;
   }
