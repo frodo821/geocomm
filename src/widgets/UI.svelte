@@ -163,6 +163,7 @@
             on:click={() => {
               messenger.sendMessage(currentContent, replyTo).then(() => {
                 currentContent = "";
+                replyTo = null;
               });
             }}
             disabled={!enableLocation || currentContent.length === 0}
