@@ -52,8 +52,8 @@
       }
     );
 
+    messenger.startListening();
     if (messenger.isSignedIn) {
-      messenger.startListening();
       messenger.register();
     }
 
@@ -117,7 +117,7 @@
           on:input={() => (messenger.channel = new Channel(...channels))}
         />
       </p>
-      <p>+{channels[0]}.{channels[1]}.{channels[2]}</p>
+      <p class="channel">+{channels[0]}.{channels[1]}.{channels[2]}</p>
     </div>
     <div class="sensitivity">
       <h2>Receive Range Control</h2>
