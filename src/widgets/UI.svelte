@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
   import {
     degrees,
     distance,
     fromGeoPoint,
     type LatLng,
-  } from "../utils/geolocation";
-  import { Channel, Messenger, type ReceivedMessage } from "../utils/messenger";
-  import MapIndicator from "./MapIndicator.svelte";
-  import Message from "./Message.svelte";
-  import { auth } from "../utils/firebase-client";
+  } from '../utils/geolocation';
+  import { Channel, Messenger, type ReceivedMessage } from '../utils/messenger';
+  import MapIndicator from './MapIndicator.svelte';
+  import Message from './Message.svelte';
+  import { auth } from '../utils/firebase-client';
 
   function rand() {
     return Math.floor(Math.random() * 256);
@@ -22,10 +22,12 @@
     longitude: degrees(0),
   };
 
+  let listenerOpened = false;
+
   const messenger = new Messenger(new Channel(...channels));
   let enableLocation = false;
   let positionWatcher: number | null = null;
-  let currentContent: string = "";
+  let currentContent: string = '';
 
   let replyTo: string | null = null;
 
@@ -48,7 +50,6 @@
       {
         enableHighAccuracy: false,
         maximumAge: 0,
-        timeout: 5000,
       }
     );
 
@@ -88,8 +89,8 @@
   {/if}
 </div>
 
-<div class="ui-layer">
-  <div class="listener" style={`--channel-color: rgb(${channels.join()})`}>
+<div class="ui-layer" style={`--channel-color: rgb(${channels.join()})`}>
+  <div class="listener" class:open={listenerOpened}>
     <div class="channels">
       <h2>Channel</h2>
       <p class="channel-ranges">
@@ -119,8 +120,13 @@
         />
       </p>
       <p class="channel">
-        <span class="channel-name">+{channels[0]}.{channels[1]}.{channels[2]}</span>
-        <span class="color-display" style="background: var(--channel-color, transparent)" />
+        <span class="channel-name"
+          >+{channels[0]}.{channels[1]}.{channels[2]}</span
+        >
+        <span
+          class="color-display"
+          style="background: var(--channel-color, transparent)"
+        />
       </p>
     </div>
     <div class="sensitivity">
@@ -140,9 +146,9 @@
       <h2>Your Location</h2>
       {#if enableLocation}
         <p>
-          {Math.abs(loc.latitude)}{loc.latitude >= 0 ? "N" : "S"}, {Math.abs(
+          {Math.abs(loc.latitude)}{loc.latitude >= 0 ? 'N' : 'S'}, {Math.abs(
             loc.longitude
-          )}{loc.longitude >= 0 ? "E" : "W"}
+          )}{loc.longitude >= 0 ? 'E' : 'W'}
         </p>
         <p class="note">
           地図の赤い丸の範囲内のメッセージは80%以上の確率で受信できます。
@@ -164,17 +170,36 @@
             type="button"
             on:click={() => {
               messenger.sendMessage(currentContent, replyTo).then(() => {
-                currentContent = "";
+                currentContent = '';
                 replyTo = null;
+                listenerOpened = false;
               });
             }}
             disabled={!enableLocation || currentContent.length === 0}
+            class="material-symbols-outlined send-button"
           >
-            Post!
+            send
+          </button>
+          <button
+            class="material-symbols-outlined close-button"
+            on:click={() => {
+              listenerOpened = false;
+              replyTo = null;
+            }}
+          >
+            close
           </button>
         </div>
       {/if}
     </div>
+  </div>
+  <div class="floating-button-listner-open">
+    <button
+      class="material-symbols-outlined"
+      on:click={() => {
+        listenerOpened = true;
+      }}
+    />
   </div>
   <div class="contents">
     <h2 class="contents-heading">Timeline</h2>
@@ -189,6 +214,9 @@
             locationEnabled={enableLocation}
             onReplySelected={(id) => {
               replyTo = id;
+              if (id !== null) {
+                listenerOpened = true;
+              }
             }}
             onMessageDeleted={() => {
               messages = messages.filter((m) => m.id !== msg.id);
@@ -227,7 +255,7 @@
       position: relative;
     }
     .listener::before {
-      content: "";
+      content: '';
       position: absolute;
       top: -0.4rem;
       bottom: -0.4rem;
@@ -238,7 +266,7 @@
       z-index: -2;
     }
     .listener::after {
-      content: "";
+      content: '';
       position: absolute;
       top: 0;
       bottom: 0;
@@ -248,7 +276,150 @@
       background: white;
       z-index: -1;
     }
+
+    .controls .close-button,
+    .floating-button-listner-open {
+      display: none;
+    }
   }
+
+  @media screen and (max-width: 1023px) {
+    .listener.listener {
+      transform: translate(3.6rem, -3.6rem) scale(0);
+      transition: 250ms;
+      transform-origin: bottom left;
+      position: absolute;
+      background: rgba(255, 255, 255, 0.6);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      display: flex;
+      flex-flow: column;
+      justify-content: end;
+      padding-bottom: 0.6rem;
+    }
+
+    .listener.open.open {
+      transform: translate(0%, 0%) scale(1);
+    }
+
+    .contents.contents {
+      transition: 250ms;
+      transform: scale(1);
+      background: rgba(255, 255, 255, 0.8);
+      height: calc(42.5vh - 0.8rem);
+      z-index: 0;
+    }
+
+    .listener.open ~ .contents {
+      transform: scale(0);
+    }
+
+    .floating-button-listner-open {
+      position: absolute;
+      bottom: 2.5rem;
+      right: 2.5rem;
+      z-index: 1;
+    }
+
+    .floating-button-listner-open > button.material-symbols-outlined {
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      border: none;
+      background: none;
+      transition: 250ms;
+      transform: scale(1.5) rotate(0deg);
+    }
+
+    .floating-button-listner-open > button.material-symbols-outlined::after {
+      content: 'edit';
+      position: relative;
+      display: block;
+      z-index: 1;
+      width: 1.9rem;
+      height: 1.9rem;
+      border-radius: 50%;
+      padding: 0;
+      padding-left: 0.1rem;
+      padding-top: 0.1rem;
+      background: white;
+      border: none;
+      margin-top: 0.25rem;
+      margin-left: 0.25rem;
+      font-size: 1.8rem;
+      left: -4px;
+      top: -4px;
+    }
+
+    .floating-button-listner-open > button.material-symbols-outlined::before {
+      content: '';
+      background: var(--channel-color, transparent);
+      display: block;
+      width: 2.5rem;
+      height: 2.5rem;
+      position: absolute;
+      z-index: 0;
+      border-radius: 50%;
+      left: -4px;
+      top: -4px;
+    }
+
+    .listener.open
+      ~ .floating-button-listner-open
+      > button.material-symbols-outlined {
+      transform: scale(0) rotate(450deg);
+    }
+
+    .input-content {
+      display: grid;
+    }
+
+    .input-content .controls {
+      display: flex;
+      flex-flow: row wrap;
+      justify-content: end;
+      padding: 0.4rem 0.2rem;
+    }
+
+    .input-content .controls button {
+      font-weight: bold;
+      border: none;
+      background: none;
+      font-size: 2rem;
+    }
+
+    .input-content .controls button:disabled {
+      opacity: 0.5;
+    }
+
+    .input-content .controls button.send-button:hover {
+      color: rgb(105, 105, 105);
+    }
+
+    .input-content .controls button.close-button:hover {
+      color: rgb(255, 106, 106);
+    }
+
+    .input-content .controls button.send-button:active {
+      color: rgb(56, 30, 78);
+    }
+
+    .input-content .controls button.close-button:active {
+      color: rgb(143, 0, 0);
+    }
+
+    .input-content .controls button.send-button {
+      color: black;
+    }
+
+    .input-content .controls button.close-button {
+      color: red;
+    }
+  }
+
   .map-layer {
     position: absolute;
     top: 0;
@@ -268,6 +439,7 @@
     padding: 0.4rem;
     border-radius: 5px;
     z-index: 1;
+    grid-auto-rows: min-content;
   }
 
   .input-content textarea {

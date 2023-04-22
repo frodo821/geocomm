@@ -1,32 +1,34 @@
 <script lang="ts">
-  import { signingIn, getAuthResult } from "../utils/firebase-client";
-  import UI from "../widgets/UI.svelte";
+  import { signingIn, getAuthResult } from '../utils/firebase-client';
+  import UI from '../widgets/UI.svelte';
 
   const authResult = getAuthResult();
 </script>
 
 <div class="application">
-{#await authResult}
-  <div class="heading">
-    <h1>Loading...</h1>
-  </div>
-{:then authResult}
-  <div class="heading">
-    <h1>Sonorous</h1>
-    {#if !authResult}
-      <div>
-        <button type="button" on:click={() => signingIn()}>Sign in with Google</button>
-      </div>
-    {/if}
-  </div>
-  <div class="ui-container">
-    <UI />
-  </div>
-{/await}
+  {#await authResult}
+    <div class="heading">
+      <h1>Loading...</h1>
+    </div>
+  {:then authResult}
+    <div class="heading">
+      <h1>Sonorous</h1>
+      {#if !authResult}
+        <div>
+          <button type="button" on:click={() => signingIn()}>
+            Sign in with Google
+          </button>
+        </div>
+      {/if}
+    </div>
+    <div class="ui-container">
+      <UI />
+    </div>
+  {/await}
 </div>
 
 <style>
-  @media screen and (min-width:1024px) {
+  @media screen and (min-width: 1024px) {
     .application {
       grid-template-rows: 8vh 92vh;
       grid-template-columns: 1fr 22fr;
@@ -40,6 +42,18 @@
     .ui-container {
       grid-row: 2/3;
       grid-column: 1/3;
+    }
+  }
+
+  @media screen and (max-width: 1023px) {
+    .application {
+      display: grid;
+      grid-template-rows: 7.5vh 42.5vh;
+      grid-row-gap: 50vh;
+    }
+
+    .ui-container {
+      height: 100%;
     }
   }
 
