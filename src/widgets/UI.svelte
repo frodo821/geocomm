@@ -89,7 +89,11 @@
   {/if}
 </div>
 
-<div class="ui-layer" style={`--channel-color: rgb(${channels.join()})`}>
+<div
+  class="ui-layer"
+  style={`--channel-color: rgb(${channels.join()})`}
+  class:not-signed-in={!messenger.isSignedIn}
+>
   <div class="listener" class:open={listenerOpened}>
     <div class="channels">
       <h2>Channel</h2>
@@ -160,37 +164,35 @@
       {/if}
     </div>
     <div class="input-content">
-      {#if messenger.isSignedIn}
-        {#if replyTo !== null}
-          <p>Replying:</p>
-        {/if}
-        <textarea rows="8" bind:value={currentContent} />
-        <div class="controls">
-          <button
-            type="button"
-            on:click={() => {
-              messenger.sendMessage(currentContent, replyTo).then(() => {
-                currentContent = '';
-                replyTo = null;
-                listenerOpened = false;
-              });
-            }}
-            disabled={!enableLocation || currentContent.length === 0}
-            class="material-symbols-outlined send-button"
-          >
-            send
-          </button>
-          <button
-            class="material-symbols-outlined close-button"
-            on:click={() => {
-              listenerOpened = false;
-              replyTo = null;
-            }}
-          >
-            close
-          </button>
-        </div>
+      {#if replyTo !== null}
+        <p>Replying:</p>
       {/if}
+      <textarea rows="8" bind:value={currentContent} />
+      <div class="controls">
+        <button
+          type="button"
+          on:click={() => {
+            messenger.sendMessage(currentContent, replyTo).then(() => {
+              currentContent = '';
+              replyTo = null;
+              listenerOpened = false;
+            });
+          }}
+          disabled={!enableLocation || currentContent.length === 0}
+          class="material-symbols-outlined send-button"
+        >
+          send
+        </button>
+        <button
+          class="material-symbols-outlined close-button"
+          on:click={() => {
+            listenerOpened = false;
+            replyTo = null;
+          }}
+        >
+          close
+        </button>
+      </div>
     </div>
   </div>
   <div class="floating-button-listner-open">
@@ -417,6 +419,14 @@
 
     .input-content .controls button.close-button {
       color: red;
+    }
+
+    .not-signed-in .input-content textarea {
+      display: none;
+    }
+
+    .input-content .controls button.send-button {
+      display: none;
     }
   }
 
