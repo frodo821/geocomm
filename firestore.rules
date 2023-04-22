@@ -35,8 +35,32 @@ service cloud.firestore {
     	return updating.diff(original).affectedKeys().hasOnly(['display_name']);
     }
 
+    function isValidAudienceData(data, uid) {
+      return
+        uid != null &&
+        data != null &&
+        data.keys().hasOnly([
+          'at', 'channel_a', 'channel_b', 'channel_c', 'expires_at',
+          'audience', 'sensitivity'
+        ]) &&
+        data.keys().hasAll([
+          'at', 'channel_a', 'channel_b', 'channel_c', 'expires_at',
+          'audience', 'sensitivity'
+        ]) &&
+        data.at is latlng &&
+        data.channel_a is number &&
+        data.channel_b is number &&
+        data.channel_c is number &&
+        data.expires_at is timestamp &&
+        data.audience is string &&
+        data.sensitivity is number;
+    }
+
+    match /locations/{user_id} {
+      allow write: if isValidAudienceData(request.resource.data, request.auth.uid);
+    }
+
     match /messages/{message_id} {
-    	allow read: if true;
       allow update: if false;
       allow create: if isValidMessage(request.resource.data, request.auth.uid);
       allow delete: if resource.data.user_id == request.auth.uid;
@@ -44,13 +68,12 @@ service cloud.firestore {
 
     match /users {
       allow write: if false;
-      allow read: if true;
 
       match /{userId} {
+        allow read;
         allow create: if request.auth.uid != null && isValidUserData(request.resource.data);
         allow update: if request.auth.uid == userId &&
                          isAllowedUpdateUserData(resource.data, request.resource.data);
-        allow read: if true;
       }
     }
     match /{document=**} {

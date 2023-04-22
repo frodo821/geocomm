@@ -1,11 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import {
-    degrees,
-    distance,
-    fromGeoPoint,
-    type LatLng,
-  } from '../utils/geolocation';
+  import { degrees, fromGeoPoint, type LatLng } from '../utils/geolocation';
   import { Channel, Messenger, type ReceivedMessage } from '../utils/messenger';
   import MapIndicator from './MapIndicator.svelte';
   import Message from './Message.svelte';
@@ -81,7 +76,7 @@
       messages={messages
         .filter((msg) => msg.user_id !== auth.currentUser?.uid)
         .map((msg) => ({
-          at: fromGeoPoint(msg.at),
+          at: msg.at ? fromGeoPoint(msg.at) : null,
           id: msg.id,
           channel: new Channel(msg.channel_a, msg.channel_b, msg.channel_c),
         }))}
@@ -425,7 +420,7 @@
       display: none;
     }
 
-    .input-content .controls button.send-button {
+    .not-signed-in .input-content .controls button.send-button {
       display: none;
     }
   }

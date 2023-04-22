@@ -1,31 +1,44 @@
 <script lang="ts">
-  import { signingIn, getAuthResult } from '../utils/firebase-client';
-  import UI from '../widgets/UI.svelte';
+  import { onMount } from 'svelte';
 
-  const authResult = getAuthResult();
+  let client: typeof import('../utils/firebase-client');
+  let UI: typeof import('../widgets/UI.svelte').default;
+  let authResult: Promise<{} | null>;
+
+  onMount(async () => {
+    UI = (await import('../widgets/UI.svelte')).default;
+    client = await import('../utils/firebase-client');
+    authResult = client.getAuthResult();
+  });
 </script>
 
-<div class="application">
-  {#await authResult}
-    <div class="heading">
-      <h1>Loading...</h1>
-    </div>
-  {:then authResult}
-    <div class="heading">
-      <h1>Sonorous</h1>
-      {#if !authResult}
-        <div>
-          <button type="button" on:click={() => signingIn()}>
-            Sign in with Google
-          </button>
-        </div>
-      {/if}
-    </div>
-    <div class="ui-container">
-      <UI />
-    </div>
-  {/await}
-</div>
+{#if client}
+  <div class="application">
+    {#await authResult}
+      <div class="heading">
+        <h1>Loading...</h1>
+      </div>
+    {:then ar}
+      <div class="heading">
+        <h1>Sonorous</h1>
+        {#if !ar}
+          <div>
+            <button type="button" on:click={() => client.signingIn()}>
+              Sign in with Google
+            </button>
+          </div>
+        {/if}
+      </div>
+      <div class="ui-container">
+        <UI />
+      </div>
+    {/await}
+  </div>
+{:else}
+  <div class="heading">
+    <h1>Loading...</h1>
+  </div>
+{/if}
 
 <style>
   @media screen and (min-width: 1024px) {

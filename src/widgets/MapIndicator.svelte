@@ -4,6 +4,8 @@
   import { Channel, invAttenuation, km_per_meters } from "../utils/messenger";
   import type { LatLng } from "../utils/geolocation";
 
+  type Message = { at: LatLng | null, id: string, channel: Channel };
+
   let indicatorElement: HTMLDivElement;
   let mapping: leaflet.Map;
   let eightyPercent: leaflet.Circle;
@@ -13,7 +15,7 @@
 
   export let location: LatLng;
   export let sensitivity: number;
-  export let messages: { at: LatLng, id: string, channel: Channel }[] = [];
+  export let messages: Message[] = [];
 
   onMount(async () => {
     leaflet = (await import("leaflet")).default;
@@ -63,6 +65,7 @@
       });
 
       messages.forEach(({ at, id, channel: c }) => {
+        if (!at) return;
         pins[id] = leaflet.marker([at.latitude, at.longitude], {
           icon: leaflet.divIcon({
             className: 'map-pins',

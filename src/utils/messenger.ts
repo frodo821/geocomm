@@ -1,15 +1,21 @@
 import type { CollectionReference, Unsubscribe } from 'firebase/firestore';
 import * as firestore from 'firebase/firestore';
-import { auth, firestoreApp } from './firebase-client';
-import { degrees, distance, fromGeoPoint, type LatLng } from './geolocation';
+import {
+  auth,
+  firestoreApp,
+  getMessagingToken,
+  messaging,
+} from './firebase-client';
+import { distance, fromGeoPoint, type LatLng } from './geolocation';
 import { Channel } from './channel';
 import { geohashForLocation } from 'geofire-common';
+import { onMessage } from 'firebase/messaging';
 export { Channel };
 
 /**
  * 遅すぎるとしんどいので、とりあえず空気中の音速の10倍を設定
  */
-export const SPEED_OF_SOUND = 3430;
+export const speed_of_sound = 3430;
 
 /**
  * 1km = 1000m
@@ -52,13 +58,14 @@ export type UserInfo = {
  * メッセージの中身
  */
 export type Message = {
-  at: firestore.GeoPoint;
+  at?: firestore.GeoPoint;
+  dist?: number;
   user_id: string;
   channel_a: number;
   channel_b: number;
   channel_c: number;
   content: string;
-  geohash: string;
+  geohash?: string;
   reply_to: string | null;
   sent_at: Date;
   embeddings: { [key: string]: string }[];
@@ -77,6 +84,26 @@ export type ReceivedMessage = MessageWithId & {
   replied_message: ReceivedMessage | null;
 };
 
+export type SerializableReceivedMessage = {
+  id: string;
+  at?: { latitude: number; longitude: number };
+  dist: number;
+  user_id: string;
+  channel_a: number;
+  channel_b: number;
+  channel_c: number;
+  content: string;
+  geohash?: string;
+  reply_to: string | null;
+  sent_at: number;
+  embeddings: { [key: string]: string }[];
+  user: {
+    created_at: number;
+    display_name: string;
+  };
+  replied_message: SerializableReceivedMessage | null;
+};
+
 /**
  * メッセージを受信するためのリスナーの設定
  */
@@ -86,11 +113,37 @@ export type ListenerProperty = {
   sensitivity: number;
 };
 
+const location_update_interval = 600_000;
+
+function toReceivedMessage(msg: SerializableReceivedMessage): ReceivedMessage {
+  const { replied_message, sent_at, user, at, ...rest } = msg;
+
+  return {
+    ...rest,
+    sent_at: new Date(sent_at),
+    at:
+      at !== undefined
+        ? new firestore.GeoPoint(at.latitude, at.longitude)
+        : undefined,
+    user: {
+      ...user,
+      created_at: new Date(user.created_at),
+    },
+    replied_message:
+      replied_message !== null ? toReceivedMessage(replied_message) : null,
+  };
+}
+
+function deserializeMessage(msg: string): ReceivedMessage {
+  return toReceivedMessage(JSON.parse(msg));
+}
+
 export class Messenger {
   private messages: CollectionReference<Message>;
   private unsubscribe?: Unsubscribe;
-  private messageQueue: MessageWithId[];
+  private messageQueue: ReceivedMessage[];
   private listener: ListenerProperty;
+  private audienceUpdater?: ReturnType<typeof setTimeout>;
 
   constructor(initial_channel: Channel, initial_location?: LatLng) {
     this.messages = firestore.collection(
@@ -103,10 +156,15 @@ export class Messenger {
       at: initial_location,
       sensitivity: 1,
     };
+    this.audienceUpdater = undefined;
   }
 
   get isSignedIn() {
-    return auth.currentUser !== null;
+    if (auth.currentUser === null) {
+      return false;
+    }
+
+    return !auth.currentUser?.isAnonymous;
   }
 
   get uid() {
@@ -119,31 +177,16 @@ export class Messenger {
 
   set channel(channel: Channel) {
     this.listener.channel = channel;
+    this.updateAudience();
   }
 
   get location() {
-    if (typeof this.listener.at === 'undefined') {
-      return;
-    }
-
-    let { latitude, longitude } = this.listener.at as {
-      latitude: number;
-      longitude: number;
-    };
-
-    latitude = latitude + Math.random() * 0.1 - 0.05;
-    longitude = longitude + Math.random() * 0.1 - 0.05;
-    latitude = Math.abs(latitude) > 90 ? 90 - (latitude - 90) : latitude;
-    longitude = Math.abs(longitude) > 180 ? 180 - (longitude - 180) : longitude;
-
-    return {
-      latitude,
-      longitude,
-    } as LatLng;
+    return this.listener.at;
   }
 
   set location(location: LatLng | undefined) {
     this.listener.at = location;
+    this.updateAudience();
   }
 
   get sensitivity() {
@@ -152,6 +195,7 @@ export class Messenger {
 
   set sensitivity(sensitivity: number) {
     this.listener.sensitivity = sensitivity;
+    this.updateAudience();
   }
 
   async register() {
@@ -193,10 +237,40 @@ export class Messenger {
     await firestore.updateDoc(userRef, { display_name: name });
   }
 
+  private updateAudience = async () => {
+    if (typeof this.location !== 'undefined') {
+      clearTimeout(this.audienceUpdater);
+    }
+
+    this.audienceUpdater = setTimeout(
+      this.updateAudience,
+      location_update_interval
+    );
+
+    const location = this.location;
+    const userId = this.uid;
+
+    if (typeof location === 'undefined' || userId === null) {
+      return;
+    }
+
+    const docRef = firestore.doc(firestoreApp, `/locations/${userId}`);
+
+    await firestore.setDoc(docRef, {
+      at: new firestore.GeoPoint(location.latitude, location.longitude),
+      channel_a: this.channel.channel_a,
+      channel_b: this.channel.channel_b,
+      channel_c: this.channel.channel_c,
+      expires_at: new Date(Date.now() + location_update_interval * 2),
+      audience: getMessagingToken(),
+      sensitivity: this.sensitivity,
+    });
+  };
+
   async sendMessage(message: string, reply_to?: string | null, sent_at?: Date) {
     const uid = this.uid;
 
-    if (!uid) {
+    if (!uid || !this.isSignedIn) {
       throw new Error('Please sign in first.');
     }
 
@@ -232,19 +306,11 @@ export class Messenger {
     }
 
     const mdoc = firestore.doc(this.messages, message_id);
-    const doc = await firestore.getDoc(mdoc);
-
-    if (!doc.exists()) {
-      return;
-    }
-
-    const msg = doc.data() as Message;
-
-    if (msg.user_id !== uid) {
+    try {
+      await firestore.deleteDoc(mdoc);
+    } catch {
       throw new Error("You can't delete other's messages.");
     }
-
-    await firestore.deleteDoc(mdoc);
   }
 
   startListening() {
@@ -252,39 +318,25 @@ export class Messenger {
       return;
     }
 
-    this.unsubscribe = firestore.onSnapshot(
-      firestore.query(
-        this.messages,
-        firestore.where(
-          'sent_at',
-          '>=',
-          firestore.Timestamp.fromMillis(Date.now() - 3600000)
-        )
-      ),
-      (snapshot) => {
-        const messages = snapshot
-          .docChanges()
-          .filter((diff) => diff.type === 'added')
-          .map((diff) => ({
-            ...diff.doc.data(),
-            id: diff.doc.id,
-          }));
-
-        this.messageQueue.push(...messages);
-        this.messageQueue.sort((m2, m1) => {
-          if (typeof this.listener.at === 'undefined') {
-            return m2.sent_at.valueOf() - m1.sent_at.valueOf();
-          }
-
-          const m2delay = this.delay(m2);
-          const m1delay = this.delay(m1);
-
-          return (
-            m1.sent_at.valueOf() + m1delay - m2.sent_at.valueOf() - m2delay
-          );
-        });
+    this.updateAudience();
+    this.unsubscribe = onMessage(messaging, (msg) => {
+      if (typeof msg.data === 'undefined') {
+        return;
       }
-    );
+
+      if (!('message' in msg.data)) {
+        return;
+      }
+
+      const message = deserializeMessage(msg.data.message);
+      this.messageQueue.push(message);
+      this.messageQueue.sort((a, b) => {
+        const ad = this.delay(a);
+        const bd = this.delay(b);
+
+        return b.sent_at.valueOf() + bd - a.sent_at.valueOf() - ad;
+      });
+    });
   }
 
   stopListening() {
@@ -294,30 +346,20 @@ export class Messenger {
 
     this.unsubscribe();
     this.unsubscribe = undefined;
+
+    clearTimeout(this.audienceUpdater);
+    this.audienceUpdater = undefined;
   }
 
   private delay(msg: Message) {
+    if (typeof msg.at === 'undefined') {
+      return (msg.dist ?? 0) / speed_of_sound;
+    }
+
     return (
       distance(this.listener.at ?? fromGeoPoint(msg.at), fromGeoPoint(msg.at)) /
-      SPEED_OF_SOUND
+      speed_of_sound
     );
-  }
-
-  messageAppearanceProbability(msg: Message) {
-    const c_dist = this.listener.channel.distance(
-      new Channel(msg.channel_a, msg.channel_b, msg.channel_c)
-    );
-    const channel = attenuation(c_dist / channel_distance_attenuation_factor);
-
-    const dist = distance(
-      this.listener.at ?? fromGeoPoint(msg.at),
-      fromGeoPoint(msg.at)
-    );
-    const physics = attenuation(
-      dist / this.listener.sensitivity / base_sensitivity_factor / km_per_meters
-    );
-
-    return channel * physics;
   }
 
   async *[Symbol.asyncIterator]() {
@@ -326,42 +368,10 @@ export class Messenger {
         const msg = this.messageQueue.shift()!;
 
         await new Promise((resolve) =>
-          setTimeout(
-            resolve,
-            Date.now() - this.delay(msg) - msg.sent_at.valueOf()
-          )
+          setTimeout(resolve, this.delay(msg) + msg.sent_at.valueOf())
         );
 
-        if (
-          Math.random() < this.messageAppearanceProbability(msg) ||
-          msg.user_id === auth.currentUser?.uid
-        ) {
-          let replied_message: ReceivedMessage | null = null;
-
-          if (msg.reply_to !== null) {
-            const rdoc = await firestore.getDoc(
-              firestore.doc(this.messages, msg.reply_to)
-            );
-            replied_message = rdoc.data() as ReceivedMessage;
-
-            const ur = firestore.doc(firestoreApp, 'users', msg.user_id);
-
-            replied_message.user = (
-              await firestore.getDoc(ur)
-            ).data()! as UserInfo;
-
-            replied_message.replied_message = null;
-          }
-
-          const userRef = firestore.doc(firestoreApp, 'users', msg.user_id);
-          const user = (await firestore.getDoc(userRef)).data()! as UserInfo;
-
-          yield {
-            ...msg,
-            user,
-            replied_message,
-          };
-        }
+        yield msg;
       } else {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }

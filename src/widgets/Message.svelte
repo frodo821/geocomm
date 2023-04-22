@@ -1,8 +1,11 @@
 <script lang="ts">
-  import { afterUpdate } from "svelte";
-  import { distance, fromGeoPoint, type LatLng } from "../utils/geolocation";
-  import { Channel, Messenger, type ReceivedMessage } from "../utils/messenger";
-  import { channel_for_color_names, color_match_regexp } from "../utils/channel";
+  import { afterUpdate } from 'svelte';
+  import { distance, fromGeoPoint, type LatLng } from '../utils/geolocation';
+  import { Channel, Messenger, type ReceivedMessage } from '../utils/messenger';
+  import {
+    channel_for_color_names,
+    color_match_regexp,
+  } from '../utils/channel';
 
   export let message: ReceivedMessage;
   export let loc: LatLng;
@@ -20,21 +23,26 @@
       /[&'`"<>]/g,
       (m) =>
         ({
-          "&": "&amp;",
-          "'": "&#x27;",
-          "`": "&#x60;",
-          '"': "&quot;",
-          "<": "&lt;",
-          ">": "&gt;",
-        }[m] ?? "")
+          '&': '&amp;',
+          "'": '&#x27;',
+          '`': '&#x60;',
+          '"': '&quot;',
+          '<': '&lt;',
+          '>': '&gt;',
+        }[m] ?? '')
     );
 
     return content.replace(color_match_regexp, (m) => {
       const c = m.slice(1) as keyof typeof channel_for_color_names;
-      const channel = c in channel_for_color_names ? channel_for_color_names[c] : Channel.fromString(c);
+      const channel =
+        c in channel_for_color_names
+          ? channel_for_color_names[c]
+          : Channel.fromString(c);
       return (
-        `<button class="channel-${message.id}" data-channel=${channel.toString()}>`+
-        `${m}<span class="color-display" style="background: ${channel.color}"></span>`+
+        `<button class="channel-${
+          message.id
+        }" data-channel=${channel.toString()}>` +
+        `${m}<span class="color-display" style="background: ${channel.color}"></span>` +
         `</button>`
       );
     });
@@ -43,19 +51,19 @@
   afterUpdate(() => {
     const buttons = self.querySelectorAll(`.channel-${message.id}`);
     buttons.forEach((button) => {
-      const channel = button.getAttribute("data-channel");
+      const channel = button.getAttribute('data-channel');
 
       if (channel === null) {
         return;
       }
 
-      const [a, b, c] = channel.split(".").map((n) => parseInt(n));
+      const [a, b, c] = channel.split('.').map((n) => parseInt(n));
 
       if (isNaN(a) || isNaN(b) || isNaN(c)) {
         return;
       }
 
-      button.addEventListener("click", () => {
+      button.addEventListener('click', () => {
         messenger.channel = new Channel(a, b, c);
         onChannelChanged();
       });
@@ -113,9 +121,13 @@
   </p>
   <p class="distance">
     {#if locationEnabled}
-      {@const dist =
-        Math.floor(distance(fromGeoPoint(message.at), loc) / 10) / 100}
-      {#if dist < 1}
+      {@const dist = message.at
+        ? Math.floor(distance(fromGeoPoint(message.at), loc) / 10) / 100
+        : message.dist ?? -1}
+
+      {#if dist < 0}
+        不明
+      {:else if dist < 1}
         {dist * 1000}m
       {:else}
         {dist}km
@@ -148,7 +160,7 @@
       <button
         type="button"
         on:click={() => {
-          if (confirm("削除しますか？")) {
+          if (confirm('削除しますか？')) {
             messenger.deleteMessage(message.id);
             onMessageDeleted(message.id);
           }
