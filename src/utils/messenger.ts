@@ -1,9 +1,9 @@
-import type { CollectionReference, Unsubscribe } from "firebase/firestore";
-import * as firestore from "firebase/firestore";
-import { auth, firestoreApp } from "./firebase-client";
-import { distance, fromGeoPoint, type LatLng } from "./geolocation";
-import { Channel } from "./channel";
-import { geohashForLocation } from "geofire-common";
+import type { CollectionReference, Unsubscribe } from 'firebase/firestore';
+import * as firestore from 'firebase/firestore';
+import { auth, firestoreApp } from './firebase-client';
+import { degrees, distance, fromGeoPoint, type LatLng } from './geolocation';
+import { Channel } from './channel';
+import { geohashForLocation } from 'geofire-common';
 export { Channel };
 
 /**
@@ -95,7 +95,7 @@ export class Messenger {
   constructor(initial_channel: Channel, initial_location?: LatLng) {
     this.messages = firestore.collection(
       firestoreApp,
-      "messages"
+      'messages'
     ) as CollectionReference<Message>;
     this.messageQueue = [];
     this.listener = {
@@ -122,7 +122,24 @@ export class Messenger {
   }
 
   get location() {
-    return this.listener.at;
+    if (typeof this.listener.at === 'undefined') {
+      return;
+    }
+
+    let { latitude, longitude } = this.listener.at as {
+      latitude: number;
+      longitude: number;
+    };
+
+    latitude = latitude + Math.random() * 0.1 - 0.05;
+    longitude = longitude + Math.random() * 0.1 - 0.05;
+    latitude = Math.abs(latitude) > 90 ? 90 - (latitude - 90) : latitude;
+    longitude = Math.abs(longitude) > 180 ? 180 - (longitude - 180) : longitude;
+
+    return {
+      latitude,
+      longitude,
+    } as LatLng;
   }
 
   set location(location: LatLng | undefined) {
@@ -141,10 +158,10 @@ export class Messenger {
     const uid = auth.currentUser?.uid;
 
     if (!uid) {
-      throw new Error("Please sign in first.");
+      throw new Error('Please sign in first.');
     }
 
-    const userRef = firestore.doc(firestoreApp, "users", uid);
+    const userRef = firestore.doc(firestoreApp, 'users', uid);
     const doc = await firestore.getDoc(userRef);
 
     if (doc.exists()) {
@@ -153,7 +170,7 @@ export class Messenger {
 
     const user: UserInfo = {
       created_at: new Date(),
-      display_name: "anonymous user",
+      display_name: 'anonymous user',
     };
 
     await firestore.setDoc(userRef, user);
@@ -163,10 +180,10 @@ export class Messenger {
     const uid = auth.currentUser?.uid;
 
     if (!uid) {
-      throw new Error("Please sign in first.");
+      throw new Error('Please sign in first.');
     }
 
-    const userRef = firestore.doc(firestoreApp, "users", uid);
+    const userRef = firestore.doc(firestoreApp, 'users', uid);
     const doc = await firestore.getDoc(userRef);
 
     if (!doc.exists()) {
@@ -180,7 +197,7 @@ export class Messenger {
     const uid = this.uid;
 
     if (!uid) {
-      throw new Error("Please sign in first.");
+      throw new Error('Please sign in first.');
     }
 
     if (!this.location) {
@@ -211,7 +228,7 @@ export class Messenger {
     const uid = this.uid;
 
     if (!uid) {
-      throw new Error("Please sign in first.");
+      throw new Error('Please sign in first.');
     }
 
     const mdoc = firestore.doc(this.messages, message_id);
@@ -231,7 +248,7 @@ export class Messenger {
   }
 
   startListening() {
-    if (typeof this.unsubscribe !== "undefined") {
+    if (typeof this.unsubscribe !== 'undefined') {
       return;
     }
 
@@ -239,15 +256,15 @@ export class Messenger {
       firestore.query(
         this.messages,
         firestore.where(
-          "sent_at",
-          ">=",
+          'sent_at',
+          '>=',
           firestore.Timestamp.fromMillis(Date.now() - 3600000)
         )
       ),
       (snapshot) => {
         const messages = snapshot
           .docChanges()
-          .filter((diff) => diff.type === "added")
+          .filter((diff) => diff.type === 'added')
           .map((diff) => ({
             ...diff.doc.data(),
             id: diff.doc.id,
@@ -255,7 +272,7 @@ export class Messenger {
 
         this.messageQueue.push(...messages);
         this.messageQueue.sort((m2, m1) => {
-          if (typeof this.listener.at === "undefined") {
+          if (typeof this.listener.at === 'undefined') {
             return m2.sent_at.valueOf() - m1.sent_at.valueOf();
           }
 
@@ -271,7 +288,7 @@ export class Messenger {
   }
 
   stopListening() {
-    if (typeof this.unsubscribe === "undefined") {
+    if (typeof this.unsubscribe === 'undefined') {
       return;
     }
 
@@ -304,7 +321,7 @@ export class Messenger {
   }
 
   async *[Symbol.asyncIterator]() {
-    while (typeof this.unsubscribe !== "undefined") {
+    while (typeof this.unsubscribe !== 'undefined') {
       if (this.messageQueue.length > 0) {
         const msg = this.messageQueue.shift()!;
 
@@ -327,7 +344,7 @@ export class Messenger {
             );
             replied_message = rdoc.data() as ReceivedMessage;
 
-            const ur = firestore.doc(firestoreApp, "users", msg.user_id);
+            const ur = firestore.doc(firestoreApp, 'users', msg.user_id);
 
             replied_message.user = (
               await firestore.getDoc(ur)
@@ -336,7 +353,7 @@ export class Messenger {
             replied_message.replied_message = null;
           }
 
-          const userRef = firestore.doc(firestoreApp, "users", msg.user_id);
+          const userRef = firestore.doc(firestoreApp, 'users', msg.user_id);
           const user = (await firestore.getDoc(userRef)).data()! as UserInfo;
 
           yield {
