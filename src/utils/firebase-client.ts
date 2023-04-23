@@ -5,7 +5,7 @@ import * as fbAuth from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDvtXl98xCZU0IJXN_LvAAjK1gNT1SJGDU',
-  authDomain: 'geocomm-sns.firebaseapp.com',
+  authDomain: this.location?.hostname ?? 'geocomm-sns.firebaseapp.com',
   projectId: 'geocomm-sns',
   storageBucket: 'geocomm-sns.appspot.com',
   messagingSenderId: '921205338102',
