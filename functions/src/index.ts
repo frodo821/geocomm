@@ -91,7 +91,7 @@ export const messageHook = functions
       locs
         .filter((it) => {
           if (it.id === msg.user_id) {
-            console.log(
+            console.debug(
               `sending to ${it.id}, because the message was sent by the user.`
             );
             return true;
@@ -104,7 +104,7 @@ export const messageHook = functions
             distances[it.id]
           );
 
-          console.log(`user ${it.id} receiving the message by ${p * 100}%`);
+          console.debug(`user ${it.id} receiving the message by ${p * 100}%`);
           return Math.random() < p;
         })
         .map((it) => {

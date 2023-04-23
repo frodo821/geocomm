@@ -88,9 +88,9 @@ export const km_per_meters = 1000;
 export const base_sensitivity_factor = 4;
 
 /**
- * attenuation関数において、チャンネル距離が1のときに0.8になるように設定
+ * attenuation関数において、チャンネル距離に対する減衰率の計数の逆数
  */
-export const channel_distance_attenuation_factor = 2;
+export const channel_distance_attenuation_factor = 0x7f;
 
 /**
  * 減衰関数。とりあえず $\frac{1}{({\rm dist})^2 + 1}$ にしてみる
@@ -144,6 +144,18 @@ export function probability(
 
   const physics = attenuation(
     distance / sensitivity / base_sensitivity_factor / km_per_meters
+  );
+
+  console.debug(
+    JSON.stringify({
+      receiving_channel: channel,
+      sent_channel: [msg.channel_a, msg.channel_b, msg.channel_c],
+      c_dist,
+      channel_attn,
+      distance,
+      sensitivity,
+      physics,
+    })
   );
 
   return channel_attn * physics;
