@@ -96,7 +96,7 @@
         <input
           type="range"
           min="0"
-          max="256"
+          max="255"
           step="1"
           bind:value={channels[0]}
           on:input={() => (messenger.channel = new Channel(...channels))}
@@ -104,7 +104,7 @@
         <input
           type="range"
           min="0"
-          max="256"
+          max="255"
           step="1"
           bind:value={channels[1]}
           on:input={() => (messenger.channel = new Channel(...channels))}
@@ -112,7 +112,7 @@
         <input
           type="range"
           min="0"
-          max="256"
+          max="255"
           step="1"
           bind:value={channels[2]}
           on:input={() => (messenger.channel = new Channel(...channels))}
