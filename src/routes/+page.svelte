@@ -21,7 +21,7 @@
     {:then ar}
       <div class="heading">
         <h1>Sonorous</h1>
-        {#if !ar?.isAnonymous}
+        {#if (ar?.isAnonymous ?? true)}
           <div>
             <button type="button" on:click={() => client.signingIn()}>
               Sign in with Google
