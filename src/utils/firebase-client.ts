@@ -3,12 +3,12 @@ import { getFirestore } from 'firebase/firestore';
 import { getMessaging, getToken } from 'firebase/messaging';
 import * as fbAuth from 'firebase/auth';
 
-{
-  const s = document.createElement('script');
-  s.src="https://cdn.jsdelivr.net/npm/eruda/eruda.min.js";
-  s.onload=()=>eruda.init();
-  document.head.appendChild(s);
-}
+// {
+//   const s = document.createElement('script');
+//   s.src="https://cdn.jsdelivr.net/npm/eruda/eruda.min.js";
+//   s.onload=()=>(window as any).eruda.init();
+//   document.head.appendChild(s);
+// }
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDvtXl98xCZU0IJXN_LvAAjK1gNT1SJGDU',

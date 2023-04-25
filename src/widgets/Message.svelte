@@ -18,6 +18,13 @@
 
   let self: HTMLDivElement;
 
+  const formatFloat = (num: number, decimals?: number) => {
+    decimals = decimals ?? 2;
+    decimals = Math.max(0, decimals);
+    const [int, dec] = (num+0.5/(10**decimals)).toString().split('.');
+    return (typeof dec !== 'undefined' && decimals > 0) ? `${int}.${dec.slice(0, decimals)}` : int;
+  }
+
   const parseContent = (content: string) => {
     content = content.replace(
       /[&'`"<>]/g,
@@ -128,9 +135,9 @@
       {#if dist < 0}
         不明
       {:else if dist < 1}
-        {dist * 1000}m
+        {formatFloat(dist * 1000)}m
       {:else}
-        {dist}km
+        {formatFloat(dist)}km
       {/if}
     {:else}
       不明

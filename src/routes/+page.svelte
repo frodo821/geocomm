@@ -3,7 +3,7 @@
 
   let client: typeof import('../utils/firebase-client');
   let UI: typeof import('../widgets/UI.svelte').default;
-  let authResult: Promise<{} | null>;
+  let authResult: Promise<any | null>;
 
   onMount(async () => {
     UI = (await import('../widgets/UI.svelte')).default;
